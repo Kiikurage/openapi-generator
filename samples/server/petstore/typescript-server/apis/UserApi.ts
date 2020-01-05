@@ -11,10 +11,10 @@
  * Do not edit the class manually.
  */
 
-import { Observable } from 'rxjs';
-import { BaseAPI } from '../runtime';
+import Router from 'koa-router';
+import * as runtime from '../runtime';
 import {
-    ,
+    User,
 } from '../models';
 
 export interface CreateUserRequest {
@@ -50,115 +50,160 @@ export interface UpdateUserRequest {
 /**
  * no description
  */
-export class UserApi extends BaseAPI {
+export interface UserController {
+
+    /**
+    * This can only be done by the logged in user.
+    * Create user
+    */
+    createUser(requestParameters: CreateUserRequest): Promise<void>
+
+    /**
+    * Creates list of users with given input array
+    */
+    createUsersWithArrayInput(requestParameters: CreateUsersWithArrayInputRequest): Promise<void>
+
+    /**
+    * Creates list of users with given input array
+    */
+    createUsersWithListInput(requestParameters: CreateUsersWithListInputRequest): Promise<void>
+
+    /**
+    * This can only be done by the logged in user.
+    * Delete user
+    */
+    deleteUser(requestParameters: DeleteUserRequest): Promise<void>
+
+    /**
+    * Get user by user name
+    */
+    getUserByName(requestParameters: GetUserByNameRequest): Promise<User>
+
+    /**
+    * Logs user into the system
+    */
+    loginUser(requestParameters: LoginUserRequest): Promise<string>
+
+    /**
+    * Logs out current logged in user session
+    */
+    logoutUser(): Promise<void>
+
+    /**
+    * This can only be done by the logged in user.
+    * Updated user
+    */
+    updateUser(requestParameters: UpdateUserRequest): Promise<void>
+}
+
+/**
+ * no description
+ */
+export function UserRouter(controller: UserController) {
+    const router = new Router();
 
     /**
      * This can only be done by the logged in user.
      * Create user
      */
-    createUser = (requestParameters: CreateUserRequest): Observable<void> => {
-        throwIfRequired(requestParameters, 'body', 'createUser');
+    router.post('/user', async (ctx) => {
+        const requestParameters: CreateUserRequest = ctx.request.body;
 
-        return this.request<void>({
-            path: '/user',
-            method: 'POST',
-            body: requestParameters.body,
-        });
-    };
+        runtime.throwIfRequired(requestParameters, 'body', 'createUser');
+
+        ctx.body = await controller.createUser(requestParameters);
+    });
 
     /**
      * Creates list of users with given input array
      */
-    createUsersWithArrayInput = (requestParameters: CreateUsersWithArrayInputRequest): Observable<void> => {
-        throwIfRequired(requestParameters, 'body', 'createUsersWithArrayInput');
+    router.post('/user/createWithArray', async (ctx) => {
+        const requestParameters: CreateUsersWithArrayInputRequest = ctx.request.body;
 
-        return this.request<void>({
-            path: '/user/createWithArray',
-            method: 'POST',
-            body: requestParameters.body,
-        });
-    };
+        runtime.throwIfRequired(requestParameters, 'body', 'createUsersWithArrayInput');
+
+        ctx.body = await controller.createUsersWithArrayInput(requestParameters);
+    });
 
     /**
      * Creates list of users with given input array
      */
-    createUsersWithListInput = (requestParameters: CreateUsersWithListInputRequest): Observable<void> => {
-        throwIfRequired(requestParameters, 'body', 'createUsersWithListInput');
+    router.post('/user/createWithList', async (ctx) => {
+        const requestParameters: CreateUsersWithListInputRequest = ctx.request.body;
 
-        return this.request<void>({
-            path: '/user/createWithList',
-            method: 'POST',
-            body: requestParameters.body,
-        });
-    };
+        runtime.throwIfRequired(requestParameters, 'body', 'createUsersWithListInput');
+
+        ctx.body = await controller.createUsersWithListInput(requestParameters);
+    });
 
     /**
      * This can only be done by the logged in user.
      * Delete user
      */
-    deleteUser = (requestParameters: DeleteUserRequest): Observable<void> => {
-        throwIfRequired(requestParameters, 'username', 'deleteUser');
+    router.delete('/user/:username', async (ctx) => {
+        const requestParameters: DeleteUserRequest = ctx.request.body;
 
-        return this.request<void>({
-            path: '/user/{username}'.replace('{username}', encodeURI(requestParameters.username)),
-            method: 'DELETE',
-        });
-    };
+        requestParameters.username = ctx.params.username;
+
+        runtime.throwIfRequired(requestParameters, 'username', 'deleteUser');
+
+        ctx.body = await controller.deleteUser(requestParameters);
+    });
 
     /**
      * Get user by user name
      */
-    getUserByName = (requestParameters: GetUserByNameRequest): Observable<User> => {
-        throwIfRequired(requestParameters, 'username', 'getUserByName');
+    router.get('/user/:username', async (ctx) => {
+        const requestParameters: GetUserByNameRequest = ctx.request.body;
 
-        return this.request<User>({
-            path: '/user/{username}'.replace('{username}', encodeURI(requestParameters.username)),
-            method: 'GET',
-        });
-    };
+        requestParameters.username = ctx.params.username;
+
+        runtime.throwIfRequired(requestParameters, 'username', 'getUserByName');
+
+        ctx.body = await controller.getUserByName(requestParameters);
+    });
 
     /**
      * Logs user into the system
      */
-    loginUser = (requestParameters: LoginUserRequest): Observable<string> => {
-        throwIfRequired(requestParameters, 'username', 'loginUser');
-        throwIfRequired(requestParameters, 'password', 'loginUser');
+    router.get('/user/login', async (ctx) => {
+        const requestParameters: LoginUserRequest = ctx.request.body;
 
-        const query: HttpQuery = {
-            ...(requestParameters.username && { 'username': requestParameters.username }),
-            ...(requestParameters.password && { 'password': requestParameters.password }),
-        };
+        const queryParameters: runtime.HTTPQuery = ctx.request.query;
+        if (queryParameters['username']) {
+            requestParameters.username = queryParameters['username'] as any;
+        }
+        if (queryParameters['password']) {
+            requestParameters.password = queryParameters['password'] as any;
+        }
 
-        return this.request<string>({
-            path: '/user/login',
-            method: 'GET',
-            query,
-        });
-    };
+        runtime.throwIfRequired(requestParameters, 'username', 'loginUser');
+        runtime.throwIfRequired(requestParameters, 'password', 'loginUser');
+
+        ctx.body = await controller.loginUser(requestParameters);
+    });
 
     /**
      * Logs out current logged in user session
      */
-    logoutUser = (): Observable<void> => {
-        return this.request<void>({
-            path: '/user/logout',
-            method: 'GET',
-        });
-    };
+    router.get('/user/logout', async (ctx) => {
+        ctx.body = await controller.logoutUser();
+    });
 
     /**
      * This can only be done by the logged in user.
      * Updated user
      */
-    updateUser = (requestParameters: UpdateUserRequest): Observable<void> => {
-        throwIfRequired(requestParameters, 'username', 'updateUser');
-        throwIfRequired(requestParameters, 'body', 'updateUser');
+    router.put('/user/:username', async (ctx) => {
+        const requestParameters: UpdateUserRequest = ctx.request.body;
 
-        return this.request<void>({
-            path: '/user/{username}'.replace('{username}', encodeURI(requestParameters.username)),
-            method: 'PUT',
-            body: requestParameters.body,
-        });
-    };
+        requestParameters.username = ctx.params.username;
 
+        runtime.throwIfRequired(requestParameters, 'username', 'updateUser');
+        runtime.throwIfRequired(requestParameters, 'body', 'updateUser');
+
+        ctx.body = await controller.updateUser(requestParameters);
+    });
+
+    return router;
 }

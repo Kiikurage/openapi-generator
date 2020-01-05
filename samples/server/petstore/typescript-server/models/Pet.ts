@@ -11,6 +11,11 @@
  * Do not edit the class manually.
  */
 
+import {
+    Category,
+    Tag,
+} from './';
+
 /**
  * A pet for sale in the pet store
  * @export
@@ -47,7 +52,7 @@ export interface Pet {
      * @type {string}
      * @memberof Pet
      */
-    status?: StatusEnum;
+    status?: PetStatusEnum;
 }
 
 /**
@@ -55,5 +60,8 @@ export interface Pet {
  * @enum {string}
  */
 export enum PetStatusEnum {
+    Available = 'available',
+    Pending = 'pending',
+    Sold = 'sold'
 }
 

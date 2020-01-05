@@ -23,7 +23,7 @@ import java.util.*;
 
 import static org.openapitools.codegen.utils.StringUtils.*;
 
-public class TypeScriptAureliaClientCodegen extends AbstractTypeScriptClientCodegen {
+public class TypeScriptAureliaClientCodegen extends AbstractTypeScriptCodegen {
 
     public TypeScriptAureliaClientCodegen() {
         super();

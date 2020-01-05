@@ -23,7 +23,7 @@ import org.openapitools.codegen.SupportingFile;
 
 import java.io.File;
 
-public class TypeScriptAngularJsClientCodegen extends AbstractTypeScriptClientCodegen {
+public class TypeScriptAngularJsClientCodegen extends AbstractTypeScriptCodegen {
 
     public TypeScriptAngularJsClientCodegen() {
         super();

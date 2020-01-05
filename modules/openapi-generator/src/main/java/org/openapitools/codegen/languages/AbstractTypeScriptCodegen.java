@@ -39,8 +39,8 @@ import java.util.stream.Collectors;
 import static org.openapitools.codegen.utils.StringUtils.camelize;
 import static org.openapitools.codegen.utils.StringUtils.underscore;
 
-public abstract class AbstractTypeScriptClientCodegen extends DefaultCodegen implements CodegenConfig {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTypeScriptClientCodegen.class);
+public abstract class AbstractTypeScriptCodegen extends DefaultCodegen implements CodegenConfig {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTypeScriptCodegen.class);
 
     private static final String X_DISCRIMINATOR_TYPE = "x-discriminator-value";
     private static final String UNDEFINED_VALUE = "undefined";
@@ -59,7 +59,7 @@ public abstract class AbstractTypeScriptClientCodegen extends DefaultCodegen imp
     protected String enumSuffix = "Enum";
     protected String classEnumSeparator = ".";
 
-    public AbstractTypeScriptClientCodegen() {
+    public AbstractTypeScriptCodegen() {
         super();
 
         // clear import mapping (from default generator) as TS does not use it

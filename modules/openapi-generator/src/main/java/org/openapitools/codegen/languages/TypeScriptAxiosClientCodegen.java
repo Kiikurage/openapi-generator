@@ -31,7 +31,7 @@ import org.openapitools.codegen.utils.ModelUtils;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class TypeScriptAxiosClientCodegen extends AbstractTypeScriptClientCodegen {
+public class TypeScriptAxiosClientCodegen extends AbstractTypeScriptCodegen {
 
     public static final String NPM_REPOSITORY = "npmRepository";
     public static final String WITH_INTERFACES = "withInterfaces";

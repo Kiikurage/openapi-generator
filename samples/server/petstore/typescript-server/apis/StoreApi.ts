@@ -11,10 +11,10 @@
  * Do not edit the class manually.
  */
 
-import { Observable } from 'rxjs';
-import { BaseAPI } from '../runtime';
+import Router from 'koa-router';
+import * as runtime from '../runtime';
 import {
-    ,
+    Order,
 } from '../models';
 
 export interface DeleteOrderRequest {
@@ -32,56 +32,84 @@ export interface PlaceOrderRequest {
 /**
  * no description
  */
-export class StoreApi extends BaseAPI {
+export interface StoreController {
+
+    /**
+    * For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors
+    * Delete purchase order by ID
+    */
+    deleteOrder(requestParameters: DeleteOrderRequest): Promise<void>
+
+    /**
+    * Returns a map of status codes to quantities
+    * Returns pet inventories by status
+    */
+    getInventory(): Promise<{ [key: string]: number; }>
+
+    /**
+    * For valid response try integer IDs with value <= 5 or > 10. Other values will generated exceptions
+    * Find purchase order by ID
+    */
+    getOrderById(requestParameters: GetOrderByIdRequest): Promise<Order>
+
+    /**
+    * Place an order for a pet
+    */
+    placeOrder(requestParameters: PlaceOrderRequest): Promise<Order>
+}
+
+/**
+ * no description
+ */
+export function StoreRouter(controller: StoreController) {
+    const router = new Router();
 
     /**
      * For valid response try integer IDs with value < 1000. Anything above 1000 or nonintegers will generate API errors
      * Delete purchase order by ID
      */
-    deleteOrder = (requestParameters: DeleteOrderRequest): Observable<void> => {
-        throwIfRequired(requestParameters, 'orderId', 'deleteOrder');
+    router.delete('/store/order/:orderId', async (ctx) => {
+        const requestParameters: DeleteOrderRequest = ctx.request.body;
 
-        return this.request<void>({
-            path: '/store/order/{orderId}'.replace('{orderId}', encodeURI(requestParameters.orderId)),
-            method: 'DELETE',
-        });
-    };
+        requestParameters.orderId = ctx.params.orderId;
+
+        runtime.throwIfRequired(requestParameters, 'orderId', 'deleteOrder');
+
+        ctx.body = await controller.deleteOrder(requestParameters);
+    });
 
     /**
      * Returns a map of status codes to quantities
      * Returns pet inventories by status
      */
-    getInventory = (): Observable<{ [key: string]: number; }> => {
-        return this.request<{ [key: string]: number; }>({
-            path: '/store/inventory',
-            method: 'GET',
-        });
-    };
+    router.get('/store/inventory', async (ctx) => {
+        ctx.body = await controller.getInventory();
+    });
 
     /**
      * For valid response try integer IDs with value <= 5 or > 10. Other values will generated exceptions
      * Find purchase order by ID
      */
-    getOrderById = (requestParameters: GetOrderByIdRequest): Observable<Order> => {
-        throwIfRequired(requestParameters, 'orderId', 'getOrderById');
+    router.get('/store/order/:orderId', async (ctx) => {
+        const requestParameters: GetOrderByIdRequest = ctx.request.body;
 
-        return this.request<Order>({
-            path: '/store/order/{orderId}'.replace('{orderId}', encodeURI(requestParameters.orderId)),
-            method: 'GET',
-        });
-    };
+        requestParameters.orderId = ctx.params.orderId;
+
+        runtime.throwIfRequired(requestParameters, 'orderId', 'getOrderById');
+
+        ctx.body = await controller.getOrderById(requestParameters);
+    });
 
     /**
      * Place an order for a pet
      */
-    placeOrder = (requestParameters: PlaceOrderRequest): Observable<Order> => {
-        throwIfRequired(requestParameters, 'body', 'placeOrder');
+    router.post('/store/order', async (ctx) => {
+        const requestParameters: PlaceOrderRequest = ctx.request.body;
 
-        return this.request<Order>({
-            path: '/store/order',
-            method: 'POST',
-            body: requestParameters.body,
-        });
-    };
+        runtime.throwIfRequired(requestParameters, 'body', 'placeOrder');
 
+        ctx.body = await controller.placeOrder(requestParameters);
+    });
+
+    return router;
 }

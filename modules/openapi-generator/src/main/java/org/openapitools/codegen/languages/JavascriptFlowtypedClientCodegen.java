@@ -31,7 +31,7 @@ import java.util.*;
 
 import static org.openapitools.codegen.utils.StringUtils.dashize;
 
-public class JavascriptFlowtypedClientCodegen extends AbstractTypeScriptClientCodegen {
+public class JavascriptFlowtypedClientCodegen extends AbstractTypeScriptCodegen {
     public static final String NPM_REPOSITORY = "npmRepository";
 
     protected String npmRepository = null;

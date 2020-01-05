@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 
-public class TypeScriptRxjsClientCodegen extends AbstractTypeScriptClientCodegen {
+public class TypeScriptRxjsClientCodegen extends AbstractTypeScriptCodegen {
 
     public static final String NPM_REPOSITORY = "npmRepository";
     public static final String WITH_INTERFACES = "withInterfaces";

@@ -1,7 +1,27 @@
 {{#apiInfo}}
+import Router from '@koa/router';
+{{#apis}}
+import {{=<% %>=}}{<%={{ }}=%> {{baseName}}Controller, {{baseName}}Router {{=<% %>=}}}<%={{ }}=%> from './{{baseName}}Api';
+{{/apis}}
+
+
 {{#apis}}
 {{#operations}}
 export * from './{{ classFilename }}';
 {{/operations}}
 {{/apis}}
+
+export function ApiRouter(
+{{#apis}}
+    {{classVarName}}Controller: {{baseName}}Controller{{^-last}},{{/-last}}
+{{/apis}}
+) {
+    const router = new Router();
+
+{{#apis}}
+    router.use({{baseName}}Router({{classVarName}}Controller).routes());
+{{/apis}}
+
+    return router;
+}
 {{/apiInfo}}

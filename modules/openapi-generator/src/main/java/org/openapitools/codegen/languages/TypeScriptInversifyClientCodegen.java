@@ -29,7 +29,7 @@ import java.util.*;
 
 import static org.openapitools.codegen.utils.StringUtils.camelize;
 
-public class TypeScriptInversifyClientCodegen extends AbstractTypeScriptClientCodegen {
+public class TypeScriptInversifyClientCodegen extends AbstractTypeScriptCodegen {
 
     public static final String NPM_REPOSITORY = "npmRepository";
     public static final String WITH_INTERFACES = "withInterfaces";

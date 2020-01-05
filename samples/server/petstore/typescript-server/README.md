@@ -26,7 +26,7 @@ TypeScript Server stub for [koa](https://github.com/koajs/koa) server.
     import { PetController } from 'generated_code_root';
 
     export class MyPetController implements PetController {
-        // TODO: Implement this
+        // Your implementation
     }
     ```
 
@@ -46,8 +46,8 @@ TypeScript Server stub for [koa](https://github.com/koajs/koa) server.
     );
 
     const app = new Koa();
-    app.use(bodyParser());
-    app.use(apiRouter.routes());
-    app.use(apiRouter.allowedMethods());
+
+    app.use(apiRouter.middleware);
+
     app.listen(3000);
     ```

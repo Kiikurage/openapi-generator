@@ -11,11 +11,11 @@
  * Do not edit the class manually.
  */
 
-import { Observable } from 'rxjs';
-import { BaseAPI } from '../runtime';
+import Router from 'koa-router';
+import * as runtime from '../runtime';
 import {
-    ,
-    ,
+    ApiResponse,
+    Pet,
 } from '../models';
 
 export interface AddPetRequest {
@@ -28,7 +28,7 @@ export interface DeletePetRequest {
 }
 
 export interface FindPetsByStatusRequest {
-    status: Array<StatusEnum>;
+    status: Array<FindPetsByStatusStatusEnum>;
 }
 
 export interface FindPetsByTagsRequest {
@@ -52,143 +52,182 @@ export interface UpdatePetWithFormRequest {
 export interface UploadFileRequest {
     petId: number;
     additionalMetadata?: string;
-    file?: Blob;
+    file?: Buffer;
 }
 
 /**
  * no description
  */
-export class PetApi extends BaseAPI {
+export interface PetController {
+
+    /**
+    * Add a new pet to the store
+    */
+    addPet(requestParameters: AddPetRequest): Promise<void>
+
+    /**
+    * Deletes a pet
+    */
+    deletePet(requestParameters: DeletePetRequest): Promise<void>
+
+    /**
+    * Multiple status values can be provided with comma separated strings
+    * Finds Pets by status
+    */
+    findPetsByStatus(requestParameters: FindPetsByStatusRequest): Promise<Array<Pet>>
+
+    /**
+    * Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.
+    * Finds Pets by tags
+    */
+    findPetsByTags(requestParameters: FindPetsByTagsRequest): Promise<Array<Pet>>
+
+    /**
+    * Returns a single pet
+    * Find pet by ID
+    */
+    getPetById(requestParameters: GetPetByIdRequest): Promise<Pet>
+
+    /**
+    * Update an existing pet
+    */
+    updatePet(requestParameters: UpdatePetRequest): Promise<void>
+
+    /**
+    * Updates a pet in the store with form data
+    */
+    updatePetWithForm(requestParameters: UpdatePetWithFormRequest): Promise<void>
+
+    /**
+    * uploads an image
+    */
+    uploadFile(requestParameters: UploadFileRequest): Promise<ApiResponse>
+}
+
+/**
+ * no description
+ */
+export function PetRouter(controller: PetController) {
+    const router = new Router();
 
     /**
      * Add a new pet to the store
      */
-    addPet = (requestParameters: AddPetRequest): Observable<void> => {
-        throwIfRequired(requestParameters, 'body', 'addPet');
+    router.post('/pet', async (ctx) => {
+        const requestParameters: AddPetRequest = ctx.request.body;
 
-        return this.request<void>({
-            path: '/pet',
-            method: 'POST',
-            body: requestParameters.body,
-        });
-    };
+        runtime.throwIfRequired(requestParameters, 'body', 'addPet');
+
+        ctx.body = await controller.addPet(requestParameters);
+    });
 
     /**
      * Deletes a pet
      */
-    deletePet = (requestParameters: DeletePetRequest): Observable<void> => {
-        throwIfRequired(requestParameters, 'petId', 'deletePet');
+    router.delete('/pet/:petId', async (ctx) => {
+        const requestParameters: DeletePetRequest = ctx.request.body;
 
-        return this.request<void>({
-            path: '/pet/{petId}'.replace('{petId}', encodeURI(requestParameters.petId)),
-            method: 'DELETE',
-        });
-    };
+        requestParameters.petId = ctx.params.petId;
+
+        runtime.throwIfRequired(requestParameters, 'petId', 'deletePet');
+
+        ctx.body = await controller.deletePet(requestParameters);
+    });
 
     /**
      * Multiple status values can be provided with comma separated strings
      * Finds Pets by status
      */
-    findPetsByStatus = (requestParameters: FindPetsByStatusRequest): Observable<Array<Pet>> => {
-        throwIfRequired(requestParameters, 'status', 'findPetsByStatus');
+    router.get('/pet/findByStatus', async (ctx) => {
+        const requestParameters: FindPetsByStatusRequest = ctx.request.body;
 
-        const query: HttpQuery = {
-            ...(requestParameters.status && { 'status': requestParameters.status.join(COLLECTION_FORMATS['csv']) }),
-        };
+        const queryParameters: runtime.HTTPQuery = ctx.request.query;
+        if (queryParameters['status']) {
+            requestParameters.status = queryParameters['status'] as any;
+        }
 
-        return this.request<Array<Pet>>({
-            path: '/pet/findByStatus',
-            method: 'GET',
-            query,
-        });
-    };
+        runtime.throwIfRequired(requestParameters, 'status', 'findPetsByStatus');
+
+        ctx.body = await controller.findPetsByStatus(requestParameters);
+    });
 
     /**
      * Multiple tags can be provided with comma separated strings. Use tag1, tag2, tag3 for testing.
      * Finds Pets by tags
      */
-    findPetsByTags = (requestParameters: FindPetsByTagsRequest): Observable<Array<Pet>> => {
-        throwIfRequired(requestParameters, 'tags', 'findPetsByTags');
+    router.get('/pet/findByTags', async (ctx) => {
+        const requestParameters: FindPetsByTagsRequest = ctx.request.body;
 
-        const query: HttpQuery = {
-            ...(requestParameters.tags && { 'tags': requestParameters.tags.join(COLLECTION_FORMATS['csv']) }),
-        };
+        const queryParameters: runtime.HTTPQuery = ctx.request.query;
+        if (queryParameters['tags']) {
+            requestParameters.tags = queryParameters['tags'] as any;
+        }
 
-        return this.request<Array<Pet>>({
-            path: '/pet/findByTags',
-            method: 'GET',
-            query,
-        });
-    };
+        runtime.throwIfRequired(requestParameters, 'tags', 'findPetsByTags');
+
+        ctx.body = await controller.findPetsByTags(requestParameters);
+    });
 
     /**
      * Returns a single pet
      * Find pet by ID
      */
-    getPetById = (requestParameters: GetPetByIdRequest): Observable<Pet> => {
-        throwIfRequired(requestParameters, 'petId', 'getPetById');
+    router.get('/pet/:petId', async (ctx) => {
+        const requestParameters: GetPetByIdRequest = ctx.request.body;
 
-        return this.request<Pet>({
-            path: '/pet/{petId}'.replace('{petId}', encodeURI(requestParameters.petId)),
-            method: 'GET',
-        });
-    };
+        requestParameters.petId = ctx.params.petId;
+
+        runtime.throwIfRequired(requestParameters, 'petId', 'getPetById');
+
+        ctx.body = await controller.getPetById(requestParameters);
+    });
 
     /**
      * Update an existing pet
      */
-    updatePet = (requestParameters: UpdatePetRequest): Observable<void> => {
-        throwIfRequired(requestParameters, 'body', 'updatePet');
+    router.put('/pet', async (ctx) => {
+        const requestParameters: UpdatePetRequest = ctx.request.body;
 
-        return this.request<void>({
-            path: '/pet',
-            method: 'PUT',
-            body: requestParameters.body,
-        });
-    };
+        runtime.throwIfRequired(requestParameters, 'body', 'updatePet');
+
+        ctx.body = await controller.updatePet(requestParameters);
+    });
 
     /**
      * Updates a pet in the store with form data
      */
-    updatePetWithForm = (requestParameters: UpdatePetWithFormRequest): Observable<void> => {
-        throwIfRequired(requestParameters, 'petId', 'updatePetWithForm');
+    router.post('/pet/:petId', async (ctx) => {
+        const requestParameters: UpdatePetWithFormRequest = ctx.request.body;
 
-        const formData = new FormData();
-        if (requestParameters.name !== undefined) {
-            formData.append('name', requestParameters.name as any);
-        }
+        requestParameters.petId = ctx.params.petId;
 
-        if (requestParameters.status !== undefined) {
-            formData.append('status', requestParameters.status as any);
-        }
+        runtime.throwIfRequired(requestParameters, 'petId', 'updatePetWithForm');
 
-        return this.request<void>({
-            path: '/pet/{petId}'.replace('{petId}', encodeURI(requestParameters.petId)),
-            method: 'POST',
-            body: formData,
-        });
-    };
+        ctx.body = await controller.updatePetWithForm(requestParameters);
+    });
 
     /**
      * uploads an image
      */
-    uploadFile = (requestParameters: UploadFileRequest): Observable<ApiResponse> => {
-        throwIfRequired(requestParameters, 'petId', 'uploadFile');
+    router.post('/pet/:petId/uploadImage', async (ctx) => {
+        const requestParameters: UploadFileRequest = ctx.request.body;
 
-        const formData = new FormData();
-        if (requestParameters.additionalMetadata !== undefined) {
-            formData.append('additionalMetadata', requestParameters.additionalMetadata as any);
-        }
+        requestParameters.petId = ctx.params.petId;
 
-        if (requestParameters.file !== undefined) {
-            formData.append('file', requestParameters.file as any);
-        }
+        runtime.throwIfRequired(requestParameters, 'petId', 'uploadFile');
 
-        return this.request<ApiResponse>({
-            path: '/pet/{petId}/uploadImage'.replace('{petId}', encodeURI(requestParameters.petId)),
-            method: 'POST',
-            body: formData,
-        });
-    };
+        ctx.body = await controller.uploadFile(requestParameters);
+    });
 
+    return router;
+}
+
+/**
+ * @export
+ * @enum {string}
+ */
+export enum FindPetsByStatusStatusEnum {
+    Available = 'available',
+    Pending = 'pending',
+    Sold = 'sold'
 }

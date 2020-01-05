@@ -31,7 +31,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class TypeScriptJqueryClientCodegen extends AbstractTypeScriptClientCodegen {
+public class TypeScriptJqueryClientCodegen extends AbstractTypeScriptCodegen {
     private static final Logger LOGGER = LoggerFactory.getLogger(TypeScriptJqueryClientCodegen.class);
 
     public static final String NPM_REPOSITORY = "npmRepository";

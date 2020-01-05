@@ -30,7 +30,7 @@ import java.util.*;
 
 import static org.openapitools.codegen.utils.StringUtils.camelize;
 
-public class TypeScriptNodeClientCodegen extends AbstractTypeScriptClientCodegen {
+public class TypeScriptNodeClientCodegen extends AbstractTypeScriptCodegen {
     private static final Logger LOGGER = LoggerFactory.getLogger(TypeScriptNodeClientCodegen.class);
 
     public static final String NPM_REPOSITORY = "npmRepository";

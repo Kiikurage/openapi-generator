@@ -23,21 +23,18 @@ import org.openapitools.codegen.*;
 import org.openapitools.codegen.utils.ModelUtils;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.TreeSet;
-import java.util.Date;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Locale;
 import java.util.Map;
+import java.util.TreeSet;
 
-// TODO rename AbstractTypeScriptClientCodegen to AbstractTypeScriptCodegen later
-public class TypeScriptServerCodegen extends AbstractTypeScriptClientCodegen {
+public class TypeScriptServerCodegen extends AbstractTypeScriptCodegen {
 
     public static final String NPM_REPOSITORY = "npmRepository";
     public static final String WITH_INTERFACES = "withInterfaces";
 
     protected String npmRepository = null;
+    protected boolean addedApiIndex = false;
+    protected boolean addedModelIndex = false;
 
     public TypeScriptServerCodegen() {
         super();
@@ -81,8 +78,7 @@ public class TypeScriptServerCodegen extends AbstractTypeScriptClientCodegen {
         supportingFiles.add(new SupportingFile("runtime.mustache", "", "runtime.ts"));
         supportingFiles.add(new SupportingFile("apis.index.mustache", apiPackage().replace('.', File.separatorChar), "index.ts"));
         supportingFiles.add(new SupportingFile("models.index.mustache", modelPackage().replace('.', File.separatorChar), "index.ts"));
-        supportingFiles.add(new SupportingFile("tsconfig.mustache", "", "tsconfig.json"));
-        supportingFiles.add(new SupportingFile("gitignore", "", ".gitignore"));
+        supportingFiles.add(new SupportingFile("README.mustache", "", "README.md"));
         if (additionalProperties.containsKey(NPM_NAME)) {
             addNpmPackageGeneration();
         }
@@ -103,9 +99,9 @@ public class TypeScriptServerCodegen extends AbstractTypeScriptClientCodegen {
             inner = ModelUtils.getAdditionalProperties(p);
             return "{ [key: string]: " + this.getTypeDeclaration(inner) + "; }";
         } else if (ModelUtils.isFileSchema(p)) {
-            return "Blob";
+            return "Buffer";
         } else if (ModelUtils.isBinarySchema(p)) {
-            return "Blob";
+            return "Buffer";
         } else if (ModelUtils.isDateSchema(p)) {
             return "Date";
         } else if (ModelUtils.isDateTimeSchema(p)) {
@@ -122,17 +118,17 @@ public class TypeScriptServerCodegen extends AbstractTypeScriptClientCodegen {
 
     @Override
     public Map<String, Object> postProcessModels(Map<String, Object> objs) {
-        /* comment out the following as we're not sure if we need these in the TS Server generator
-        // process enum in models
         List<Object> models = (List<Object>) postProcessModelsEnum(objs).get("models");
+
+        // process enum in models
         for (Object _mo : models) {
             Map<String, Object> mo = (Map<String, Object>) _mo;
             CodegenModel cm = (CodegenModel) mo.get("model");
             cm.imports = new TreeSet(cm.imports);
-            // name enum with model name, e.g. StatusEnum => PetStatusEnum
+            // name enum with model name, e.g. StatusEnum => Pet.StatusEnum
             for (CodegenProperty var : cm.vars) {
                 if (Boolean.TRUE.equals(var.isEnum)) {
-                    // behaviour for enum names is specific for typescript to not use namespaces
+                    // behaviour for enum names is specific for Typescript Fetch, not using namespaces
                     var.datatypeWithEnum = var.datatypeWithEnum.replace(var.enumName, cm.classname + var.enumName);
                 }
             }
@@ -144,8 +140,17 @@ public class TypeScriptServerCodegen extends AbstractTypeScriptClientCodegen {
                     }
                 }
             }
+            if (!cm.oneOf.isEmpty()) {
+                // For oneOfs only import $refs within the oneOf
+                TreeSet<String> oneOfRefs = new TreeSet<>();
+                for (String im : cm.imports) {
+                    if (cm.oneOf.contains(im)) {
+                        oneOfRefs.add(im);
+                    }
+                }
+                cm.imports = oneOfRefs;
+            }
         }
-        */
 
         return objs;
     }
@@ -154,7 +159,6 @@ public class TypeScriptServerCodegen extends AbstractTypeScriptClientCodegen {
     public Map<String, Object> postProcessAllModels(Map<String, Object> objs) {
         Map<String, Object> result = super.postProcessAllModels(objs);
 
-        /* comment out the following as we're not sure if we need these in the TS Server generator
         for (Map.Entry<String, Object> entry : result.entrySet()) {
             Map<String, Object> inner = (Map<String, Object>) entry.getValue();
             List<Map<String, Object>> models = (List<Map<String, Object>>) inner.get("models");
@@ -163,7 +167,6 @@ public class TypeScriptServerCodegen extends AbstractTypeScriptClientCodegen {
                 model.put("hasImports", codegenModel.imports.size() > 0);
             }
         }
-        */
         return result;
     }
 
@@ -196,6 +199,89 @@ public class TypeScriptServerCodegen extends AbstractTypeScriptClientCodegen {
         // Files for building our lib
         supportingFiles.add(new SupportingFile("README.mustache", "", "README.md"));
         supportingFiles.add(new SupportingFile("package.mustache", "", "package.json"));
+        supportingFiles.add(new SupportingFile("npmignore.mustache", "", ".npmignore"));
+    }
+
+    @Override
+    public Map<String, Object> postProcessOperationsWithModels(Map<String, Object> operations, List<Object> allModels) {
+        // Add supporting file only if we plan to generate files in /apis
+        if (operations.size() > 0 && !addedApiIndex) {
+            addedApiIndex = true;
+            supportingFiles.add(new SupportingFile("apis.index.mustache", apiPackage().replace('.', File.separatorChar), "index.ts"));
+        }
+
+        // Add supporting file only if we plan to generate files in /models
+        if (allModels.size() > 0 && !addedModelIndex) {
+            addedModelIndex = true;
+            supportingFiles.add(new SupportingFile("models.index.mustache", modelPackage().replace('.', File.separatorChar), "index.ts"));
+        }
+
+        this.updatePathFormatInKoaStyle(operations);
+        this.replaceHttpMethodWithLowerCase(operations);
+        this.addOperationModelImportInformation(operations);
+        this.updateOperationParameterEnumInformation(operations);
+        this.addOperationObjectResponseInformation(operations);
+        return operations;
+    }
+
+    private void updatePathFormatInKoaStyle(Map<String, Object> operations) {
+        Map<String, Object> _operations = (Map<String, Object>) operations.get("operations");
+        List<CodegenOperation> operationList = (List<CodegenOperation>) _operations.get("operation");
+        for (CodegenOperation op : operationList) {
+            op.path = op.path.replaceAll("\\{([^{]+)}", ":$1");
+            op.httpMethod = op.httpMethod.toLowerCase();
+        }
+    }
+
+    private void replaceHttpMethodWithLowerCase(Map<String, Object> operations) {
+        Map<String, Object> _operations = (Map<String, Object>) operations.get("operations");
+        List<CodegenOperation> operationList = (List<CodegenOperation>) _operations.get("operation");
+        for (CodegenOperation op : operationList) {
+            op.httpMethod = op.httpMethod.toLowerCase();
+        }
+    }
+
+    private void addOperationModelImportInformation(Map<String, Object> operations) {
+        // This method will add extra information to the operations.imports array.
+        // The api template uses this information to import all the required
+        // models for a given operation.
+        List<Map<String, Object>> imports = (List<Map<String, Object>>) operations.get("imports");
+        for (Map<String, Object> im : imports) {
+            im.put("className", im.get("import").toString().replace(modelPackage() + ".", ""));
+        }
+    }
+
+    private void updateOperationParameterEnumInformation(Map<String, Object> operations) {
+        // This method will add extra information as to whether or not we have enums and
+        // update their names with the operation.id prefixed.
+        Map<String, Object> _operations = (Map<String, Object>) operations.get("operations");
+        List<CodegenOperation> operationList = (List<CodegenOperation>) _operations.get("operation");
+        boolean hasEnum = false;
+        for (CodegenOperation op : operationList) {
+            for (CodegenParameter param : op.allParams) {
+                if (Boolean.TRUE.equals(param.isEnum)) {
+                    hasEnum = true;
+                    param.datatypeWithEnum = param.datatypeWithEnum
+                            .replace(param.enumName, op.operationIdCamelCase + param.enumName);
+                }
+            }
+        }
+
+        operations.put("hasEnums", hasEnum);
+    }
+
+    private void addOperationObjectResponseInformation(Map<String, Object> operations) {
+        // This method will modify the information on the operations' return type.
+        // The api template uses this information to know when to return a text
+        // response for a given simple response operation.
+        Map<String, Object> _operations = (Map<String, Object>) operations.get("operations");
+        List<CodegenOperation> operationList = (List<CodegenOperation>) _operations.get("operation");
+        for (CodegenOperation op : operationList) {
+            if(op.returnType == "object") {
+                op.isMapContainer = true;
+                op.returnSimpleType = false;
+            }
+        }
     }
 
 }

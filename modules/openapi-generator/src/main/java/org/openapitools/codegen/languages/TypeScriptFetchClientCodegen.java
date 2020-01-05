@@ -28,7 +28,7 @@ import java.util.TreeSet;
 import java.util.List;
 import java.util.Map;
 
-public class TypeScriptFetchClientCodegen extends AbstractTypeScriptClientCodegen {
+public class TypeScriptFetchClientCodegen extends AbstractTypeScriptCodegen {
 
     public static final String NPM_REPOSITORY = "npmRepository";
     public static final String WITH_INTERFACES = "withInterfaces";
